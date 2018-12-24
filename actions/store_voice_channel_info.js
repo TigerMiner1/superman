@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Transfer Variable",
+name: "Store Voice Channel Info",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Transfer Variable",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Other Stuff",
+section: "Channel Control",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,8 +23,9 @@ section: "Other Stuff",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const storeTypes = ["", "Temp Variable", "Server Variable", "Global Variable"];
-	return `${storeTypes[parseInt(data.storage)]} (${data.varName}) -> ${storeTypes[parseInt(data.storage2)]} (${data.varName2})`;
+	const channels = ['Command Author\'s Voice Ch.', 'Mentioned User\'s Voice Ch.', 'Default Voice Channel', 'Temp Variable', 'Server Variable', 'Global Variable'];
+	const info = ["Voice Channel Object", "Voice Channel ID", "Voice Channel Name", "Voice Channel Position", "Voice Channel User Limit", "Voice Channel Bitrate"];
+	return `${channels[parseInt(data.channel)]} - ${info[parseInt(data.info)]}`;
 },
 
 //---------------------------------------------------------------------
@@ -34,17 +35,27 @@ subtitle: function(data) {
 //---------------------------------------------------------------------
 
 variableStorage: function(data, varType) {
-	const type = parseInt(data.storage2);
+	const type = parseInt(data.storage);
 	if(type !== varType) return;
-	let assumeType = 'Unknown Type';
-	if(type === parseInt(data.storage)) {
-		for(let i = 0; i < tracker.length; i++) {
-			if(tracker[i] && tracker[i][0] === data.varName) {
-				assumeType = tracker[i][1];
-			}
-		}
+	const info = parseInt(data.info);
+	let dataType = 'Unknown Type';
+	switch(info) {
+		case 0:
+			dataType = "Voice Channel";
+			break;
+		case 1:
+			dataType = "Voice Channel ID";
+			break;
+		case 2:
+			dataType = "Text";
+			break;
+		case 3:
+		case 4:
+		case 5:
+			dataType = "Number";
+			break;
 	}
-	return ([data.varName2, assumeType]);
+	return ([data.varName2, dataType]);
 },
 
 //---------------------------------------------------------------------
@@ -55,7 +66,7 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["storage", "varName", "storage2", "varName2"],
+fields: ["channel", "varName", "info", "storage", "varName2"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -77,20 +88,33 @@ html: function(isEvent, data) {
 	return `
 <div>
 	<div style="float: left; width: 35%;">
-		Transfer Value From:<br>
-		<select id="storage" class="round" onchange="glob.refreshVariableList(this)">
-			${data.variables[1]}
+		Source Channel:<br>
+		<select id="channel" class="round" onchange="glob.voiceChannelChange(this, 'varNameContainer')">
+			${data.voiceChannels[isEvent ? 1 : 0]}
 		</select>
 	</div>
-	<div id="varNameContainer" style="float: right; width: 60%;">
+	<div id="varNameContainer" style="display: none; float: right; width: 60%;">
 		Variable Name:<br>
 		<input id="varName" class="round" type="text" list="variableList"><br>
 	</div>
 </div><br><br><br>
-<div style="padding-top: 8px;">
+<div>
+	<div style="padding-top: 8px; width: 70%;">
+		Source Info:<br>
+		<select id="info" class="round">
+			<option value="0" selected>Voice Channel Object</option>
+			<option value="1">Voice Channel ID</option>
+			<option value="2">Voice Channel Name</option>
+			<option value="3">Voice Channel Position</option>
+			<option value="4">Voice Channel User Limit</option>
+			<option value="5">Voice Channel Bitrate</option>
+		</select>
+	</div>
+</div><br>
+<div>
 	<div style="float: left; width: 35%;">
-		Transfer Value To:<br>
-		<select id="storage2" class="round">
+		Store In:<br>
+		<select id="storage" class="round">
 			${data.variables[1]}
 		</select>
 	</div>
@@ -112,7 +136,7 @@ html: function(isEvent, data) {
 init: function() {
 	const {glob, document} = this;
 
-	glob.refreshVariableList(document.getElementById('storage'));
+	glob.voiceChannelChange(document.getElementById('channel'), 'varNameContainer');
 },
 
 //---------------------------------------------------------------------
@@ -125,22 +149,45 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-	const storage = parseInt(data.storage);
+	const channel = parseInt(data.channel);
 	const varName = this.evalMessage(data.varName, cache);
-	const var1 = this.getVariable(storage, varName, cache);
-	if(!var1) {
+	const info = parseInt(data.info);
+	const targetChannel = this.getVoiceChannel(channel, varName, cache);
+	if(!targetChannel) {
 		this.callNextAction(cache);
 		return;
 	}
-	const storage2 = parseInt(data.storage2);
-	const varName2 = this.evalMessage(data.varName2, cache);
-	const var2 = this.getVariable(storage2, varName2, cache);
-	if(!var2) {
-		this.callNextAction(cache);
-		return;
+	let result;
+	switch(info) {
+		case 0:
+			result = targetChannel;
+			break;
+		case 1:
+			result = targetChannel.id;
+			break;
+		case 2:
+			result = targetChannel.name;
+			break;
+		case 3:
+			result = targetChannel.position;
+			break;
+		case 4:
+			result = targetChannel.userLimit;
+			break;
+		case 5:
+			result = targetChannel.bitrate;
+			break;
+		default:
+			break;
 	}
-	this.storeValue(var2, storage, varName, cache);
-	this.callNextAction(cache);
+	if(result !== undefined) {
+		const storage = parseInt(data.storage);
+		const varName2 = this.evalMessage(data.varName2, cache);
+		this.storeValue(result, storage, varName2, cache);
+		this.callNextAction(cache);
+	} else {
+		this.callNextAction(cache);
+	}
 },
 
 //---------------------------------------------------------------------

@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Transfer Variable",
+name: "Store Time Info",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -23,8 +23,8 @@ section: "Other Stuff",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const storeTypes = ["", "Temp Variable", "Server Variable", "Global Variable"];
-	return `${storeTypes[parseInt(data.storage)]} (${data.varName}) -> ${storeTypes[parseInt(data.storage2)]} (${data.varName2})`;
+	const time = ['Year', 'Month', 'Day of the Month', 'Hour', 'Minute', 'Second', 'Milisecond'];
+	return `${time[parseInt(data.type)]}`;
 },
 
 //---------------------------------------------------------------------
@@ -34,17 +34,13 @@ subtitle: function(data) {
 //---------------------------------------------------------------------
 
 variableStorage: function(data, varType) {
-	const type = parseInt(data.storage2);
+	const type = parseInt(data.storage);
 	if(type !== varType) return;
-	let assumeType = 'Unknown Type';
-	if(type === parseInt(data.storage)) {
-		for(let i = 0; i < tracker.length; i++) {
-			if(tracker[i] && tracker[i][0] === data.varName) {
-				assumeType = tracker[i][1];
-			}
-		}
+	let result = "Number";
+	if(data.type === "7") {
+		result = "Text";
 	}
-	return ([data.varName2, assumeType]);
+	return ([data.varName, result]);
 },
 
 //---------------------------------------------------------------------
@@ -55,7 +51,7 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["storage", "varName", "storage2", "varName2"],
+fields: ["type", "storage", "varName"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -76,27 +72,30 @@ fields: ["storage", "varName", "storage2", "varName2"],
 html: function(isEvent, data) {
 	return `
 <div>
+	<div style="padding-top: 8px; width: 70%;">
+		Time Info:<br>
+		<select id="type" class="round">
+			<option value="0" selected>Year</option>
+			<option value="1">Month (Number)</option>
+			<option value="7">Month (Text)</option>
+			<option value="2">Day of the Month</option>
+			<option value="3">Hour</option>
+			<option value="4">Minute</option>
+			<option value="5">Second</option>
+			<option value="6">Milisecond</option>
+		</select>
+	</div>
+</div><br>
+<div>
 	<div style="float: left; width: 35%;">
-		Transfer Value From:<br>
-		<select id="storage" class="round" onchange="glob.refreshVariableList(this)">
+		Store In:<br>
+		<select id="storage" class="round">
 			${data.variables[1]}
 		</select>
 	</div>
 	<div id="varNameContainer" style="float: right; width: 60%;">
 		Variable Name:<br>
-		<input id="varName" class="round" type="text" list="variableList"><br>
-	</div>
-</div><br><br><br>
-<div style="padding-top: 8px;">
-	<div style="float: left; width: 35%;">
-		Transfer Value To:<br>
-		<select id="storage2" class="round">
-			${data.variables[1]}
-		</select>
-	</div>
-	<div id="varNameContainer2" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName2" class="round" type="text"><br>
+		<input id="varName" class="round" type="text"><br>
 	</div>
 </div>`
 },
@@ -110,9 +109,6 @@ html: function(isEvent, data) {
 //---------------------------------------------------------------------
 
 init: function() {
-	const {glob, document} = this;
-
-	glob.refreshVariableList(document.getElementById('storage'));
 },
 
 //---------------------------------------------------------------------
@@ -125,21 +121,42 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-	const storage = parseInt(data.storage);
-	const varName = this.evalMessage(data.varName, cache);
-	const var1 = this.getVariable(storage, varName, cache);
-	if(!var1) {
-		this.callNextAction(cache);
-		return;
+	const type = parseInt(data.type);
+	let result;
+	switch(type) {
+		case 0:
+			result = new Date().getFullYear();
+			break;
+		case 1:
+			result = new Date().getMonth() + 1;
+			break;
+		case 2:
+			result = new Date().getDate();
+			break;
+		case 3:
+			result = new Date().getHours();
+			break;
+		case 4:
+			result = new Date().getMinutes();
+			break;
+		case 5:
+			result = new Date().getSeconds();
+			break;
+		case 6:
+			result = new Date().getMiliseconds();
+			break;
+		case 7:
+			const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+			result = months[(new Date().getMonth())];
+		default:
+			break;
 	}
-	const storage2 = parseInt(data.storage2);
-	const varName2 = this.evalMessage(data.varName2, cache);
-	const var2 = this.getVariable(storage2, varName2, cache);
-	if(!var2) {
-		this.callNextAction(cache);
-		return;
+	console.log((new Date()).year)
+	if(result !== undefined) {
+		const storage = parseInt(data.storage);
+		const varName = this.evalMessage(data.varName, cache);
+		this.storeValue(result, storage, varName, cache);
 	}
-	this.storeValue(var2, storage, varName, cache);
 	this.callNextAction(cache);
 },
 

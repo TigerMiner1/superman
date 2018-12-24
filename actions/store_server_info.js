@@ -133,6 +133,7 @@ html: function(isEvent, data) {
 			<option value="1">Server ID</option>
 			<option value="2">Server Name</option>
 			<option value="3">Server Name Acronym</option>
+			<option value="17">Server Member Count</option>
 			<option value="4">Server Region</option>
 			<option value="5">Server Icon URL</option>
 			<option value="6">Server Verification Level</option>
@@ -247,6 +248,9 @@ action: function(cache) {
 			break;
 		case 16:
 			result = targetServer.emojis.array();
+			break;
+		case 17:
+			result = targetServer.members.size;
 			break;
 		default:
 			break;

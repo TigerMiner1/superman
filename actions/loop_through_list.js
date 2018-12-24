@@ -24,7 +24,7 @@ section: "Lists and Loops",
 
 subtitle: function(data) {
 	const list = ['Server Members', 'Server Channels', 'Server Roles', 'Server Emojis', 'All Bot Servers', 'Mentioned User Roles', 'Command Author Roles', 'Temp Variable', 'Server Variable', 'Global Variable'];
-	return `Loop ${list[parseInt(data.list)]} through Event #${data.source}`;
+	return `Loop ${list[parseInt(data.list)]} through Event ID "${data.source}"`;
 },
 
 //---------------------------------------------------------------------
@@ -134,7 +134,7 @@ init: function() {
 	source.innerHTML = '';
 	for(let i = 0; i < $evts.length; i++) {
 		if($evts[i]) {
-			source.innerHTML += `<option value="${i}">${$evts[i].name}</option>\n`;
+			source.innerHTML += `<option value="${$evts[i]._id}">${$evts[i].name}</option>\n`;
 		}
 	}
 },
@@ -151,12 +151,19 @@ action: function(cache) {
 	const data = cache.actions[cache.index];
 	const Files = this.getDBM().Files;
 	
-	const id = parseInt(data.source);
-	if(!Files.data.events[id]) {
+	const id = data.source;
+	let actions;
+	const allData = Files.data.events;
+	for(let i = 0; i < allData.length; i++) {
+		if(allData[i]._id === id) {
+			actions = allData[i].actions;
+			break;
+		}
+	}
+	if(!actions) {
 		this.callNextAction(cache);
 		return;
 	}
-	const actions = Files.data.events[id].actions;
 
 	const storage = parseInt(data.list);
 	const varName = this.evalMessage(data.varName, cache);

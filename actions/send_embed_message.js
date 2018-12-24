@@ -90,6 +90,7 @@ html: function(isEvent, data) {
 init: function() {
 	const {glob, document} = this;
 
+	glob.refreshVariableList(document.getElementById('storage'));
 	glob.sendTargetChange(document.getElementById('channel'), 'varNameContainer2')
 },
 
@@ -111,19 +112,18 @@ action: function(cache) {
 		this.callNextAction(cache);
 		return;
 	}
-
 	const msg = cache.msg;
 	const channel = parseInt(data.channel);
 	const varName2 = this.evalMessage(data.varName2, cache);
 	const target = this.getSendTarget(channel, varName2, cache);
-	if(target && target.send) {
-		try {
-			target.send({embed}).then(function() {
-				this.callNextAction(cache);
-			}.bind(this)).catch(this.displayError.bind(this, data, cache));
-		} catch(e) {
-			this.displayError(data, cache, e);
-		}
+	if(Array.isArray(target)) {
+		this.callListFunc(target, 'send', [{embed}]).then(function() {
+			this.callNextAction(cache);
+		}.bind(this));
+	} else if(target && target.send) {
+		target.send({embed}).then(function() {
+			this.callNextAction(cache);
+		}.bind(this)).catch(this.displayError.bind(this, data, cache));
 	} else {
 		this.callNextAction(cache);
 	}

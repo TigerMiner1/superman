@@ -141,10 +141,8 @@ action: function(cache) {
 		const storage = parseInt(data.storage);
 		const varName = this.evalMessage(data.varName, cache);
 		this.storeValue(result, storage, varName, cache);
-		this.callNextAction(cache);
-	} else {
-		this.callNextAction(cache);
 	}
+	this.callNextAction(cache);
 },
 
 //---------------------------------------------------------------------

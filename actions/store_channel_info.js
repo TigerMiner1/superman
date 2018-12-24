@@ -114,6 +114,7 @@ html: function(isEvent, data) {
 			<option value="4">Channel Last Message</option>
 			<option value="5">Channel Position</option>
 			<option value="6">Channel Is NSFW?</option>
+			<option value="7">Channel Is DM?</option>
 		</select>
 	</div>
 </div><br>
@@ -155,6 +156,7 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
+	const DiscordJS = this.getDBM().DiscordJS;
 	const channel = parseInt(data.channel);
 	const varName = this.evalMessage(data.varName, cache);
 	const info = parseInt(data.info);
@@ -182,6 +184,9 @@ action: function(cache) {
 			break;
 		case 6:
 			result = targetChannel.nsfw;
+			break;
+		case 7:
+			result = (targetChannel instanceof DiscordJS.GroupDMChannel || targetChannel instanceof DiscordJS.DMChannel);
 			break;
 		default:
 			break;

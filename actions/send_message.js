@@ -129,7 +129,14 @@ action: function(cache) {
 	if(channel === undefined || message === undefined) return;
 	const varName = this.evalMessage(data.varName, cache);
 	const target = this.getSendTarget(channel, varName, cache);
-	if(target && target.send) {
+	if(Array.isArray(target)) {
+		this.callListFunc(target, 'send', [this.evalMessage(message, cache)]).then(function(resultMsg) {
+			const varName2 = this.evalMessage(data.varName2, cache);
+			const storage = parseInt(data.storage);
+			this.storeValue(resultMsg, storage, varName2, cache);
+			this.callNextAction(cache);
+		}.bind(this));
+	} else if(target && target.send) {
 		target.send(this.evalMessage(message, cache)).then(function(resultMsg) {
 			const varName2 = this.evalMessage(data.varName2, cache);
 			const storage = parseInt(data.storage);

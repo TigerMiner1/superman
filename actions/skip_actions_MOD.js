@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Set Embed Description",
+name: "Skip Actions",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Set Embed Description",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Embed Message",
+section: "Other Stuff",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +23,8 @@ section: "Embed Message",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `${data.message}`;
+	return `Skip ${data.count}`;
 },
-
-//---------------------------------------------------------------------
-	 // DBM Mods Manager Variables (Optional but nice to have!)
-	 //
-	 // These are variables that DBM Mods Manager uses to show information
-	 // about the mods for people to see in the list.
-	 //---------------------------------------------------------------------
-
-	 // Who made the mod (If not set, defaults to "DBM Mods")
-	 author: "DBM",
-
-	 // The version of the mod (Defaults to 1.0.0)
-	 version: "1.8.2",
-
-	 // A short description to show on the mod line for this mod (Must be on a single line)
-	 short_description: "Changed Category",
-
-	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-
-	 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -55,7 +34,7 @@ subtitle: function(data) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["storage", "varName", "message"],
+fields: ["count"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -76,21 +55,17 @@ fields: ["storage", "varName", "message"],
 html: function(isEvent, data) {
 	return `
 <div>
-	<div style="float: left; width: 35%;">
-		Source Embed Object:<br>
-		<select id="storage" class="round" onchange="glob.refreshVariableList(this)">
-			${data.variables[1]}
-		</select>
+	<p>
+		<u>Mod Info:</u><br>
+		Created by Lasse!
+	</p>
+</div><br>
+<div>
+	<div id="varNameContainer" style="float: left; width: 60%;">
+		Actions To Skip:<br>
+		<input id="count" class="round" type="number">
 	</div>
-	<div id="varNameContainer" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName" class="round" type="text" list="variableList"><br>
-	</div>
-</div><br><br><br>
-<div style="padding-top: 8px;">
-	Description:<br>
-	<textarea id="message" rows="10" placeholder="Insert message here..." style="width: 99%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
-</div>`
+</div><br><br><br>`
 },
 
 //---------------------------------------------------------------------
@@ -101,8 +76,7 @@ html: function(isEvent, data) {
 // functions for the DOM elements.
 //---------------------------------------------------------------------
 
-init: function() {
-},
+init: function() {},
 
 //---------------------------------------------------------------------
 // Action Bot Function
@@ -114,13 +88,20 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-	const storage = parseInt(data.storage);
-	const varName = this.evalMessage(data.varName, cache);
-	const embed = this.getVariable(storage, varName, cache);
-	if(embed && embed.setDescription) {
-		embed.setDescription(this.evalMessage(data.message, cache));
+	// const val = parseInt(this.evalMessage(data.call, cache));
+	// const index = Math.max(val - 1, 0);
+	// if(cache.actions[index]) {
+	// 	cache.index = index - 1;
+	// 	this.callNextAction(cache);
+	// }
+
+	const amnt = parseInt(this.evalMessage(data.count, cache));
+	const index2 = cache.index + amnt + 1;
+
+	if(cache.actions[index2]) {
+		cache.index = index2 - 1;
+		this.callNextAction(cache);
 	}
-	this.callNextAction(cache);
 },
 
 //---------------------------------------------------------------------

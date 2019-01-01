@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Store Message Info",
+name: "Store Reaction Info",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Store Message Info",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Messaging",
+section: "Reaction Control",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,31 +23,32 @@ section: "Messaging",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const message = ['Command Message', 'Temp Variable', 'Server Variable', 'Global Variable'];
-	const info = ['Message Object', 'Message ID', 'Message Text', 'Message Author', 'Message Channel', 'Message Timestamp', 'Message Is Pinned?', 'Message Is TTS?', 'Message edited at', 'Message edits history', 'Message is pinnable?', 'Message includes @everyone mention?', 'Messages different reactions count', 'Mentioned users list', 'Mentioned users count', 'Message URL'];
-	return `${message[parseInt(data.message)]} - ${info[parseInt(data.info)]}`;
+	const reaction = ['You cheater!', 'Temp Variable', 'Server Variable', 'Global Variable'];
+	const info = ['Message Object', 'Bot reacted?', 'Users Who Reacted List', 'Emoji Name', 'Reaction Count', 'First User to React', 'Random User to React', 'Last User to React'];
+	return `${reaction[parseInt(data.reaction)]} - ${info[parseInt(data.info)]}`;
 },
 
 //---------------------------------------------------------------------
-	 // DBM Mods Manager Variables (Optional but nice to have!)
-	 //
-	 // These are variables that DBM Mods Manager uses to show information
-	 // about the mods for people to see in the list.
-	 //---------------------------------------------------------------------
+// DBM Mods Manager Variables (Optional but nice to have!)
+//
+// These are variables that DBM Mods Manager uses to show information
+// about the mods for people to see in the list.
+//---------------------------------------------------------------------
 
-	 // Who made the mod (If not set, defaults to "DBM Mods")
-	 author: "DBM Mods, Lasse & NetLuis",
+// Who made the mod (If not set, defaults to "DBM Mods")
+author: "Lasse & MrGold",
 
-	 // The version of the mod (Defaults to 1.0.0)
-	 version: "1.9.3",
+// The version of the mod (Defaults to 1.0.0)
+version: "1.9.1", //Added in 1.8.8
 
-	 // A short description to show on the mod line for this mod (Must be on a single line)
-	 short_description: "Added more options to default action.",
+// A short description to show on the mod line for this mod (Must be on a single line)
+short_description: "Stores Messages Reaction information",
 
-	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+depends_on_mods: [
+{name:'WrexMods',path:'aaa_wrexmods_dependencies_MOD.js'}
+],
 
-
-	 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Storage Function
@@ -62,50 +63,28 @@ variableStorage: function(data, varType) {
 	let dataType = 'Unknown Type';
 	switch(info) {
 		case 0:
-			dataType = 'Message';
+			dataType = "Message";
 			break;
 		case 1:
-			dataType = 'Message ID';
+			dataType = "Boolean";
 			break;
 		case 2:
-			dataType = 'Text';
+			dataType = "List";
 			break;
 		case 3:
-			dataType = 'Server Member';
+			dataType = "String";
 			break;
 		case 4:
-			dataType = 'Channel';
+			dataType = "Number";
 			break;
 		case 5:
-			dataType = 'Text';
+			dataType = "User";
 			break;
 		case 6:
+			dataType = "User";
+			break;
 		case 7:
-			dataType = 'Boolean';
-			break;
-		case 8:
-			dataType = "Date";
-			break;
-		case 9:
-			dataType = "Array";
-			break;
-		case 10:
-			dataType = "Boolean";
-			break;
-		case 11:
-			dataType = "Boolean";
-			break;
-		case 12:
-			dataType = "Number";
-			break;
-		case 13:
-			dataType = "Array";
-			break;
-		case 14:
-			dataType = "Number";
-			break;
-		case 15: 
-			dataType = "URL";
+			dataType = "User";
 			break;
 	}
 	return ([data.varName2, dataType]);
@@ -119,35 +98,40 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["message", "varName", "info", "storage", "varName2"],
+fields: ["reaction", "varName", "info", "storage", "varName2"],
 
 //---------------------------------------------------------------------
 // Command HTML
 //
 // This function returns a string containing the HTML used for
-// editting actions. 
+// editting actions.
 //
 // The "isEvent" parameter will be true if this action is being used
-// for an event. Due to their nature, events lack certain information, 
+// for an event. Due to their nature, events lack certain information,
 // so edit the HTML to reflect this.
 //
-// The "data" parameter stores constants for select elements to use. 
+// The "data" parameter stores constants for select elements to use.
 // Each is an array: index 0 for commands, index 1 for events.
-// The names are: sendTargets, members, roles, channels, 
+// The names are: sendTargets, members, roles, channels,
 //                messages, servers, variables
 //---------------------------------------------------------------------
 
 html: function(isEvent, data) {
 	return `
-	<div><p>This action has been modified by DBM Mods.</p></div><br>
+	<div>
+		<p>
+			<u>Mod Info:</u><br>
+			Created by Lasse & MrGold!
+		</p>
+	</div><br>
 <div>
 	<div style="float: left; width: 35%;">
-		Source Message:<br>
-		<select id="message" class="round" onchange="glob.messageChange(this, 'varNameContainer')">
-			${data.messages[isEvent ? 1 : 0]}
+		Source Reaction:<br>
+		<select id="reaction" class="round" onchange="glob.refreshVariableList(this)">
+			${data.variables[1]}
 		</select>
 	</div>
-	<div id="varNameContainer" style="display: none; float: right; width: 60%;">
+	<div id="varNameContainer" style="float: right; width: 60%;">
 		Variable Name:<br>
 		<input id="varName" class="round" type="text" list="variableList"><br>
 	</div>
@@ -157,21 +141,13 @@ html: function(isEvent, data) {
 		Source Info:<br>
 		<select id="info" class="round">
 			<option value="0" selected>Message Object</option>
-			<option value="1">Message ID</option>
-			<option value="2">Message Text</option>
-			<option value="3">Message Author</option>
-			<option value="4">Message Channel</option>
-			<option value="5">Message Timestamp</option>
-			<option value="6">Message Is Pinned?</option>
-			<option value="7">Message Is TTS?</option>
-			<option value="8">Message edited at</option>
-			<option value="9">Message edit history</option>
-			<option value="10">Message is pinnable?</option>
-			<option value="11">Message includes @everyone mention?</option>
-			<option value="12">Messages different reactions count</option>
-			<option value="13">Messages mentioned users list</option>
-			<option value="14">Messages mentioned users count</option>
-			<option value="15">Message URL</option>
+			<option value="5">First User to React</option>
+			<option value="6">Random User to React</option>
+			<option value="7">Last User to React</option>
+			<option value="1">Bot Reacted?</option>
+			<option value="2">User Who Reacted List</option>
+			<option value="3">Emoji Name</option>
+			<option value="4">Reaction Count</option>
 		</select>
 	</div>
 </div><br>
@@ -188,7 +164,7 @@ html: function(isEvent, data) {
 	</div>
 </div>`
 },
-
+//display: none;
 //---------------------------------------------------------------------
 // Action Editor Init Code
 //
@@ -200,77 +176,57 @@ html: function(isEvent, data) {
 init: function() {
 	const {glob, document} = this;
 
-	glob.messageChange(document.getElementById('message'), 'varNameContainer')
+	glob.refreshVariableList(document.getElementById('reaction'));
 },
 
 //---------------------------------------------------------------------
 // Action Bot Function
 //
 // This is the function for the action within the Bot's Action class.
-// Keep in mind event calls won't have access to the "msg" parameter, 
+// Keep in mind event calls won't have access to the "msg" parameter,
 // so be sure to provide checks for variable existance.
 //---------------------------------------------------------------------
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-	const message = parseInt(data.message);
+	const reaction = parseInt(data.reaction);
 	const varName = this.evalMessage(data.varName, cache);
 	const info = parseInt(data.info);
-	const msg = this.getMessage(message, varName, cache);
-	if(!msg) {
+	var WrexMods = this.getWrexMods(); //Find aaa_wrexmods_dependencies_MOD
+	const rea = WrexMods.getReaction(reaction, varName, cache); //Get Reaction
+	if(!WrexMods) return;
+	if(!rea) {
+		console.log('This is not a reaction'); //Variable is not a reaction -> Error
 		this.callNextAction(cache);
-		return;
 	}
 	let result;
 	switch(info) {
 		case 0:
-			result = msg;
+			result = rea.message; //Message Object
 			break;
 		case 1:
-			result = msg.id;
+			result = rea.me; //This bot reacted?
 			break;
 		case 2:
-			result = msg.content;
+			result = rea.users.array(); //All users who reacted list
 			break;
 		case 3:
-			if(msg.member) {
-				result = msg.member;
-			}
+			result = rea.emoji.name; //Emoji (/Reaction) name
 			break;
 		case 4:
-			result = msg.channel;
+			result = rea.count; //Number (user+bots) who reacted like this
 			break;
 		case 5:
-			result = msg.createdTimestamp;
+			const firstid = rea.users.firstKey(); //Stores first user ID reacted
+			result = cache.server.members.find(element => element.id === firstid);
 			break;
 		case 6:
-			result = msg.pinned;
+			const randomid = rea.users.randomKey(); //Stores random user ID reacted
+			result = cache.server.members.find(element => element.id === randomid);
 			break;
 		case 7:
-			result = msg.tts;
-		case 8:
-			result = msg.editedAt;
-			break;
-		case 9:
-			result = msg.edits;
-			break;
-		case 10:
-			result = msg.pinnable;
-			break;
-		case 11:
-			result = msg.mentions.everyone;
-			break;
-		case 12:
-			result = msg.reactions.array().length;
-			break;
-		case 13:
-			result = msg.mentions.users.array();
-			break;
-		case 14:
-			result = msg.mentions.users.array().length;
-			break;
-		case 15:
-			result = msg.url;
+			const lastid = rea.users.lastKey(); //Stores last user ID reacted
+			result = cache.server.members.find(element => element.id === lastid);
 			break;
 		default:
 			break;

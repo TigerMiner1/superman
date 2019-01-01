@@ -1,4 +1,3 @@
-
 	//---------------------------------------------------------------------
 	// Created by General Wrex
 	// My Patreons have made creating this script possible @ https://www.patreon.com/generalwrex

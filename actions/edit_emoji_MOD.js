@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Find Channel",
+name: "Edit Emoji",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Find Channel",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Channel Control",
+section: "Emoji Control",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,21 +23,32 @@ section: "Channel Control",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const info = ['Channel ID', 'Channel Name', 'Channel Topic'];
-	return `Find Channel by ${info[parseInt(data.info)]}`;
+	const emoji = ['You cheater!', 'Temp Variable', 'Server Variable', 'Global Variable'];
+	return `${emoji[parseInt(data.storage)]}`;
 },
 
 //---------------------------------------------------------------------
-// Action Storage Function
-//
-// Stores the relevant variable info for the editor.
-//---------------------------------------------------------------------
+	 // DBM Mods Manager Variables (Optional but nice to have!)
+	 //
+	 // These are variables that DBM Mods Manager uses to show information
+	 // about the mods for people to see in the list.
+	 //---------------------------------------------------------------------
 
-variableStorage: function(data, varType) {
-	const type = parseInt(data.storage);
-	if(type !== varType) return;
-	return ([data.varName, 'Channel']);
-},
+	 // Who made the mod (If not set, defaults to "DBM Mods")
+	 author: "Quinten & MrGold",
+
+	 // The version of the mod (Defaults to 1.0.0)
+	 version: "1.9", //Added in 1.9
+
+	 // A short description to show on the mod line for this mod (Must be on a single line)
+	 short_description: "Edits a specific Emoji",
+
+	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+	 depends_on_mods: [
+	 {name:'WrexMods',path:'aaa_wrexmods_dependencies_MOD.js'}
+	 ],
+	 
+	 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -47,7 +58,7 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["info", "find", "storage", "varName"],
+fields: ["storage", "varName", "emojiName"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -67,31 +78,27 @@ fields: ["info", "find", "storage", "varName"],
 
 html: function(isEvent, data) {
 	return `
+	<div>
+		<p>
+			<u>Mod Info:</u><br>
+			Made by <b>Quinten</b> & <b>MrGold</b>!</p>
+		</p>
+	</div><br>
 <div>
-	<div style="float: left; width: 40%;">
-		Source Field:<br>
-		<select id="info" class="round">
-			<option value="0" selected>Channel ID</option>
-			<option value="1">Channel Name</option>
-			<option value="2">Channel Topic</option>
-		</select>
-	</div>
-	<div style="float: right; width: 55%;">
-		Search Value:<br>
-		<input id="find" class="round" type="text">
-	</div>
-</div><br><br><br>
-<div style="padding-top: 8px;">
 	<div style="float: left; width: 35%;">
-		Store In:<br>
-		<select id="storage" class="round">
+		Source Emoji:<br>
+		<select id="storage" class="round" onchange="glob.refreshVariableList(this)">
 			${data.variables[1]}
 		</select>
 	</div>
 	<div id="varNameContainer" style="float: right; width: 60%;">
 		Variable Name:<br>
-		<input id="varName" class="round" type="text">
+		<input id="varName" class="round" type="text" list="variableList"><br>
 	</div>
+</div><br><br><br>
+<div style="padding-top: 8px;">
+	Emoji Name:<br>
+	<input id="emojiName" placeholder="Leave blank to not edit!" class="round" type="text">
 </div>`
 },
 
@@ -104,6 +111,9 @@ html: function(isEvent, data) {
 //---------------------------------------------------------------------
 
 init: function() {
+	const {glob, document} = this;
+	
+	glob.emojiChange(document.getElementById('storage'));
 },
 
 //---------------------------------------------------------------------
@@ -115,36 +125,23 @@ init: function() {
 //---------------------------------------------------------------------
 
 action: function(cache) {
-	const server = cache.server;
-	if(!server || !server.channels) {
-		this.callNextAction(cache);
-		return;
-	}
 	const data = cache.actions[cache.index];
-	const info = parseInt(data.info);
-	const find = this.evalMessage(data.find, cache);
-	const channels = server.channels.filter(function(channel) {
-		return channel.type === 'text';
-	});
-	let result;
-	switch(info) {
-		case 0:
-			result = channels.find(element => element.id === find);
-			break;
-		case 1:
-			result = channels.find(element => element.name === find);
-			break;
-		case 2:
-			result = channels.find(element => element.topic === find);
-			break;
-		default:
-			break;
+	const emojiData = {};
+	if(data.emojiName) {
+		emojiData.name = this.evalMessage(data.emojiName, cache);
 	}
-	if(result !== undefined) {
-		const storage = parseInt(data.storage);
-		const varName = this.evalMessage(data.varName, cache);
-		this.storeValue(result, storage, varName, cache);
-		this.callNextAction(cache);
+	const storage = parseInt(data.storage);
+	const varName = this.evalMessage(data.varName, cache);
+	var WrexMods = this.getWrexMods();
+	const emoji = WrexMods.getEmoji(storage, varName, cache);
+	if(Array.isArray(emoji)) {
+		this.callListFunc(emoji, 'edit', [emojiData]).then(function() {
+			this.callNextAction(cache);
+		}.bind(this));
+	} else if(emoji && emoji.edit) {
+		emoji.edit(emojiData).then(function(emoji) {
+			this.callNextAction(cache);
+		}.bind(this)).catch(this.displayError.bind(this, data, cache));
 	} else {
 		this.callNextAction(cache);
 	}

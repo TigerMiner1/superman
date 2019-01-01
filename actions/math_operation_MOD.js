@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Find Reaction",
+name: "Math Operation",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Find Reaction",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Reaction Control",
+section: "Other Stuff",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +23,27 @@ section: "Reaction Control",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `${data.find}`;
+	const info = ['Round', 'Absolute', 'Ceil', 'Floor', 'Sine', 'Cosine', 'Tangent', 'Arc Sine', 'Arc Cosine', 'Arc Tangent'];
+	return `${info[data.info]}`;
 },
-
+	
 //---------------------------------------------------------------------
-	 // DBM Mods Manager Variables (Optional but nice to have!)
-	 //
-	 // These are variables that DBM Mods Manager uses to show information
-	 // about the mods for people to see in the list.
-	 //---------------------------------------------------------------------
+// DBM Mods Manager Variables (Optional but nice to have!)
+//
+// These are variables that DBM Mods Manager uses to show information
+// about the mods for people to see in the list.
+//---------------------------------------------------------------------
 
-	 // Who made the mod (If not set, defaults to "DBM Mods")
-	 author: "MrGold",
+// Who made the mod (If not set, defaults to "DBM Mods")
+author: "iAmaury",
 
-	 // The version of the mod (Defaults to 1.0.0)
-	 version: "1.9.1", //Added in 1.9.1
+// The version of the mod (Defaults to 1.0.0)
+version: "1.8.9",
 
-	 // A short description to show on the mod line for this mod (Must be on a single line)
-	 short_description: "Finds a reaction",
+// A short description to show on the mod line for this mod (Must be on a single line)
+short_description: "Do math operations using the Math object",
 
-	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-
-	 //---------------------------------------------------------------------
+// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
 
 //---------------------------------------------------------------------
 // Action Storage Function
@@ -53,10 +51,11 @@ subtitle: function(data) {
 // Stores the relevant variable info for the editor.
 //---------------------------------------------------------------------
 
-variableStorage: function(data, varType) {
+variableStorage: function (data, varType) {
 	const type = parseInt(data.storage);
-	if(type !== varType) return;
-	return ([data.varName2, 'Reaction']);
+	if (type !== varType) return;
+	let dataType = 'Number';
+	return ([data.varName, dataType]);
 },
 
 //---------------------------------------------------------------------
@@ -67,7 +66,7 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["message", "varName", "info", "find", "storage", "varName2"],
+fields: ["math", "info", "storage", "varName"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -87,37 +86,36 @@ fields: ["message", "varName", "info", "find", "storage", "varName2"],
 
 html: function(isEvent, data) {
 	return `
-	<div>
-		<p>
-			<u>Mod Info:</u><br>
-			Created by MrGold
-		</p>
+<div>
+	<div style="float: left; width: 30%; padding-top: 8px;">
+		<p><u>Mod Info:</u><br>
+		Made by <b>iAmaury</b> !<br>
+		Edited by MrGold</p>
+	</div>
+	<div style="float: right; width: 60%; padding-top: 8px;">
+		<p><u>Note:</u><br>
+		Get more informations <a href="https://www.w3schools.com/js/js_math.asp">here</a>.
 	</div><br>
-<div>
-	<div style="float: left; width: 35%;">
-		Source Message:<br>
-		<select id="message" class="round" onchange="glob.messageChange(this, 'varNameContainer')">
-			${data.messages[isEvent ? 1 : 0]}
-		</select>
-	</div>
-	<div id="varNameContainer" style="display: none; float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName" class="round" type="text" list="variableList"><br>
-	</div>
-</div><br><br><br><br>
-<div>
-	<div style="float: left; width: 40%;">
-		Source Emoji:<br>
-		<select id="info" class="round">
-			<option value="0" selected>Emoji ID</option>
-			<option value="1">Emoji Name</option>
-		</select>
-	</div>
-	<div style="float: right; width: 55%;">
-		Search Value:<br>
-		<input id="find" class="round" type="text">
-	</div>
-</div><br><br><br><br>
+</div><br><br><br>
+<div style="padding-top: 8px;">
+	Source Number:
+	<textarea id="math" rows="2" placeholder="Insert number(s) here..." style="width: 99%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
+</div><br>
+<div style="padding-top: 8px; width: 60%;">
+	Math Operation:
+	<select id="info" class="round">
+			<option value="0" selected>Round</option>
+			<option value="1">Absolute</option>
+			<option value="2">Ceil</option>
+			<option value="3">Floor</option>
+			<option value="4">Sine</option>
+			<option value="5">Cosine</option>
+			<option value="6">Tangent</option>
+			<option value="7">Arc Sine</option>
+			<option value="8">Arc Cosine</option>
+			<option value="9">Arc Tangent</option>
+	</select>
+</div><br>
 <div style="padding-top: 8px;">
 	<div style="float: left; width: 35%;">
 		Store In:<br>
@@ -125,10 +123,12 @@ html: function(isEvent, data) {
 			${data.variables[1]}
 		</select>
 	</div>
-	<div id="varNameContainer2" style="float: right; width: 60%;">
+	<div id="varNameContainer" style="float: right; width: 60%;">
 		Variable Name:<br>
-		<input id="varName2" class="round" type="text">
-	</div>`
+		<input id="varName" class="round" type="text">
+	</div>
+</div>
+	`
 },
 
 //---------------------------------------------------------------------
@@ -140,10 +140,7 @@ html: function(isEvent, data) {
 //---------------------------------------------------------------------
 
 init: function() {
-	const {glob, document} = this;
-
-	glob.messageChange(document.getElementById('message'), 'varNameContainer')
-},
+	},
 
 //---------------------------------------------------------------------
 // Action Bot Function
@@ -155,28 +152,54 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-	const message = parseInt(data.message);
+	const storage = parseInt(data.storage);
 	const varName = this.evalMessage(data.varName, cache);
-	const msg = this.getMessage(message, varName, cache);
+	const math = parseFloat(this.evalMessage(data.math, cache).replace(/,/g, ''));
 	const info = parseInt(data.info);
-	const emoji = this.evalMessage(data.find, cache);
-	
+
+	if(!math) {
+		console.log("There is no number !")
+		this.callNextAction(cache);
+	}
 	let result;
 	switch(info) {
 		case 0:
-			result = msg.reactions.find(reaction => reaction.emoji.id == emoji);
+			result = Math.round(math);
 			break;
 		case 1:
-			result = msg.reactions.find(reaction => reaction.emoji.name == emoji);
+			result = Math.abs(math);
+			break;
+		case 2:
+			result = Math.ceil(math);
+			break;
+		case 3:
+			result = Math.floor(math);
+			break;
+		case 4:
+			result = Math.sin(math);
+			break;
+		case 5:
+			result = Math.cos(math);
+			break;
+		case 6:
+			result = Math.tan(math);
+			break;
+		case 7:
+			result = Math.asin(math);
+			break;
+		case 8:
+			result = Math.acos(math);
+			break;
+		case 9:
+			result = Math.atan(math);
 			break;
 		default:
 			break;
 	}
-	
-	if(result !== undefined) {
+	if (result !== undefined) {
 		const storage = parseInt(data.storage);
-		const varName2 = this.evalMessage(data.varName2, cache);
-		this.storeValue(result, storage, varName2, cache);
+		const varName = this.evalMessage(data.varName, cache);
+		this.storeValue(result, storage, varName, cache);
 	}
 	this.callNextAction(cache);
 },

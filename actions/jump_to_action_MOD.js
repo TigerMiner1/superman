@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Edit Embed",
+name: "Jump to Action",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Edit Embed",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Embed Message",
+section: "Other Stuff",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +23,8 @@ section: "Embed Message",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `${data.varName} - ${data.varName2}`;
+	return `Jump to action ${typeof data.call === 'number' ? "#" : "" + data.call}`;
 },
-
-//---------------------------------------------------------------------
-	 // DBM Mods Manager Variables (Optional but nice to have!)
-	 //
-	 // These are variables that DBM Mods Manager uses to show information
-	 // about the mods for people to see in the list.
-	 //---------------------------------------------------------------------
-
-	 // Who made the mod (If not set, defaults to "DBM Mods")
-	 author: "MrGold",
-
-	 // The version of the mod (Defaults to 1.0.0)
-	 version: "1.9", //Added in 1.9
-
-	 // A short description to show on the mod line for this mod (Must be on a single line)
-	 short_description: "Edits a Specific Embed",
-
-	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-
-	 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -55,7 +34,7 @@ subtitle: function(data) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["storage", "varName", "storage2", "varName2"],
+fields: ["call"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -75,40 +54,18 @@ fields: ["storage", "varName", "storage2", "varName2"],
 
 html: function(isEvent, data) {
 	return `
-	<div>
-		<p>
-			<u>Mod Info:</u><br>
-			Created by MrGold
-		</p>
-	</div><br>
 <div>
-	<div style="float: left; width: 35%;">
-		Source Message Object:<br>
-		<select id="storage" class="round" onchange="glob.refreshVariableList(this, 'varNameContainer')">
-			${data.variables[1]}
-		</select>
-	</div>
-	<div id="varNameContainer" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName" class="round" type="text" list="variableList"><br>
-	</div>
-</div><br><br><br><br>
-	<div style="float: left; width: 35%;">
-		Source New Embed Object:<br>
-		<select id="storage2" class="round" onchange="glob.refreshVariableList(this, 'varNameContainer2')">
-			${data.variables[1]}
-		</select>
-	</div>
-	<div id="varNameContainer2" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName2" class="round" type="text" list="variableList"><br>
-</div>
-<div style="float: left; width: 88%; padding-top: 8px;">
 	<p>
-		<b>NOTE:</b> In the "Source Message Object" you can insert a normal message or an embed message (use "Send Embed Message MOD").
+		<u>Mod Info:</u><br>
+		Created by Lasse!
 	</p>
+</div><br>
 <div>
-</div>`
+	<div id="varNameContainer" style="float: left; width: 60%;">
+		Jump to Action:<br>
+		<input id="call" class="round" type="number">
+	</div>
+</div><br><br><br>`
 },
 
 //---------------------------------------------------------------------
@@ -119,12 +76,7 @@ html: function(isEvent, data) {
 // functions for the DOM elements.
 //---------------------------------------------------------------------
 
-init: function() {
-	const {glob, document} = this;
-
-	glob.refreshVariableList(document.getElementById('storage'), 'varNameContainer');
-	glob.refreshVariableList(document.getElementById('storage2'), 'varNameContainer2');
-},
+init: function() {},
 
 //---------------------------------------------------------------------
 // Action Bot Function
@@ -136,16 +88,12 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-	const storage = parseInt(data.storage);
-	const varName = this.evalMessage(data.varName, cache);
-	const embed = this.getVariable(storage, varName, cache);
-	const storage2 = parseInt(data.storage2);
-	const varName2 = this.evalMessage(data.varName2, cache);
-	const embed2 = this.getVariable(storage2, varName2, cache);
-	if(embed && embed.edit) {
-		embed.edit({embed: embed2})
+	const val = parseInt(this.evalMessage(data.call, cache));
+	const index = Math.max(val - 1, 0);
+	if(cache.actions[index]) {
+		cache.index = index - 1;
+		this.callNextAction(cache);
 	}
-	this.callNextAction(cache);
 },
 
 //---------------------------------------------------------------------

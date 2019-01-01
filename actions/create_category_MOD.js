@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Find Channel",
+name: "Create Category Channel",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -23,9 +23,30 @@ section: "Channel Control",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const info = ['Channel ID', 'Channel Name', 'Channel Topic'];
-	return `Find Channel by ${info[parseInt(data.info)]}`;
+	return `${data.channelName}`;
 },
+
+//---------------------------------------------------------------------
+	 // DBM Mods Manager Variables (Optional but nice to have!)
+	 //
+	 // These are variables that DBM Mods Manager uses to show information
+	 // about the mods for people to see in the list.
+	 //---------------------------------------------------------------------
+
+	 // Who made the mod (If not set, defaults to "DBM Mods")
+	 author: "EliteArtz",
+
+	 // The version of the mod (Defaults to 1.0.0)
+	 version: "1.9.3", //Added in 1.8.3
+
+	 // A short description to show on the mod line for this mod (Must be on a single line)
+	 short_description: "Creates a Category Channel!",
+
+	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+
+
+	 //---------------------------------------------------------------------
+
 
 //---------------------------------------------------------------------
 // Action Storage Function
@@ -47,50 +68,45 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["info", "find", "storage", "varName"],
+fields: ["channelName", "position", "storage", "varName"],
 
 //---------------------------------------------------------------------
 // Command HTML
 //
 // This function returns a string containing the HTML used for
-// editting actions. 
+// editting actions.
 //
 // The "isEvent" parameter will be true if this action is being used
-// for an event. Due to their nature, events lack certain information, 
+// for an event. Due to their nature, events lack certain information,
 // so edit the HTML to reflect this.
 //
-// The "data" parameter stores constants for select elements to use. 
+// The "data" parameter stores constants for select elements to use.
 // Each is an array: index 0 for commands, index 1 for events.
-// The names are: sendTargets, members, roles, channels, 
+// The names are: sendTargets, members, roles, channels,
 //                messages, servers, variables
 //---------------------------------------------------------------------
 
 html: function(isEvent, data) {
 	return `
+	<div><p><u>Mod Info:</u><br>Created by EliteArtz!</p><br>
+		<p><u>Notices:</u><br>- Requires Discord Bot Maker <b>BETA</b></p>
+	</div><br>
+	Name:<br>
+	<input id="channelName" class="round" type="text"><br>
+	<div style="float: left; width: 50%;">
+		Position:<br>
+		<input id="position" class="round" type="text" placeholder="Leave blank for default!" style="width: 90%;"><br>
+	</div><br><br><br><br>
 <div>
-	<div style="float: left; width: 40%;">
-		Source Field:<br>
-		<select id="info" class="round">
-			<option value="0" selected>Channel ID</option>
-			<option value="1">Channel Name</option>
-			<option value="2">Channel Topic</option>
-		</select>
-	</div>
-	<div style="float: right; width: 55%;">
-		Search Value:<br>
-		<input id="find" class="round" type="text">
-	</div>
-</div><br><br><br>
-<div style="padding-top: 8px;">
-	<div style="float: left; width: 35%;">
+<div style="float: left; width: 45%;">
 		Store In:<br>
-		<select id="storage" class="round">
-			${data.variables[1]}
+		<select id="storage" class="round" onchange="glob.variableChange(this, 'varNameContainer')">
+			${data.variables[0]}
 		</select>
 	</div>
-	<div id="varNameContainer" style="float: right; width: 60%;">
+	<div id="varNameContainer" style="display: none; float: right; width: 50%;">
 		Variable Name:<br>
-		<input id="varName" class="round" type="text">
+		<input id="varName" class="round" type="text" style="width: 90%"><br>
 	</div>
 </div>`
 },
@@ -104,47 +120,35 @@ html: function(isEvent, data) {
 //---------------------------------------------------------------------
 
 init: function() {
+	const {glob, document} = this;
+
+	glob.variableChange(document.getElementById('storage'), 'varNameContainer');
 },
 
 //---------------------------------------------------------------------
 // Action Bot Function
 //
 // This is the function for the action within the Bot's Action class.
-// Keep in mind event calls won't have access to the "msg" parameter, 
+// Keep in mind event calls won't have access to the "msg" parameter,
 // so be sure to provide checks for variable existance.
 //---------------------------------------------------------------------
 
 action: function(cache) {
-	const server = cache.server;
-	if(!server || !server.channels) {
-		this.callNextAction(cache);
-		return;
-	}
 	const data = cache.actions[cache.index];
-	const info = parseInt(data.info);
-	const find = this.evalMessage(data.find, cache);
-	const channels = server.channels.filter(function(channel) {
-		return channel.type === 'text';
-	});
-	let result;
-	switch(info) {
-		case 0:
-			result = channels.find(element => element.id === find);
-			break;
-		case 1:
-			result = channels.find(element => element.name === find);
-			break;
-		case 2:
-			result = channels.find(element => element.topic === find);
-			break;
-		default:
-			break;
-	}
-	if(result !== undefined) {
+	const server = cache.server;
+	if(server && server.createChannel) {
+		const name = this.evalMessage(data.channelName, cache);
 		const storage = parseInt(data.storage);
-		const varName = this.evalMessage(data.varName, cache);
-		this.storeValue(result, storage, varName, cache);
-		this.callNextAction(cache);
+		server.createChannel(name, 'category').then(function(channel) {
+			const channelData = {};
+			if(data.position) {
+				channelData.position = parseInt(data.position);
+			}
+			channel.edit(channelData);
+			const varName = this.evalMessage(data.varName, cache);
+			this.storeValue(channel, storage, varName, cache);
+			this.callNextAction(cache);
+		}.bind(this)).catch(this.displayError.bind(this, data, cache));
 	} else {
 		this.callNextAction(cache);
 	}
@@ -159,7 +163,6 @@ action: function(cache) {
 // functions you wish to overwrite.
 //---------------------------------------------------------------------
 
-mod: function(DBM) {
-}
+mod: function(DBM) {}
 
 }; // End of module

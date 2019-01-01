@@ -6,7 +6,7 @@ module.exports = {
 	// This is the name of the action displayed in the editor.
 	//---------------------------------------------------------------------
 	
-	name: "Loop Through All Servers",
+	name: "Find Custom Emoji in Server",
 	
 	//---------------------------------------------------------------------
 	// Action Section
@@ -14,7 +14,7 @@ module.exports = {
 	// This is the section the action will fall into.
 	//---------------------------------------------------------------------
 	
-	section: "Lists and Loops",
+	section: "Emoji Control",
 	
 	//---------------------------------------------------------------------
 	// Action Subtitle
@@ -23,29 +23,21 @@ module.exports = {
 	//---------------------------------------------------------------------
 	
 	subtitle: function(data) {
-		return `Loop Servers through Event ID "${data.source}"`;
+		const info = ['Emoji ID', 'Emoji Name'];
+		return `Find Emoji by ${info[parseInt(data.info)]}`;
 	},
-
+	
 	//---------------------------------------------------------------------
-// DBM Mods Manager Variables (Optional but nice to have!)
-//
-// These are variables that DBM Mods Manager uses to show information
-// about the mods for people to see in the list.
-//---------------------------------------------------------------------
-
-// Who made the mod (If not set, defaults to "DBM Mods")
-author: "DBM",
-
-// The version of the mod (Defaults to 1.0.0)
-version: "1.9.3", //Added in 1.9.3
-
-// A short description to show on the mod line for this mod (Must be on a single line)
-short_description: "Fixed bug.",
-
-// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-
-//---------------------------------------------------------------------
+	// Action Storage Function
+	//
+	// Stores the relevant variable info for the editor.
+	//---------------------------------------------------------------------
+	
+	variableStorage: function(data, varType) {
+		const type = parseInt(data.storage);
+		if(type !== varType) return;
+		return ([data.varName, 'Emoji']);
+	},
 	
 	//---------------------------------------------------------------------
 	// Action Fields
@@ -55,7 +47,7 @@ short_description: "Fixed bug.",
 	// are also the names of the fields stored in the action's JSON data.
 	//---------------------------------------------------------------------
 	
-	fields: ["source", "type"],
+	fields: ["info", "find", "storage", "varName"],
 	
 	//---------------------------------------------------------------------
 	// Command HTML
@@ -75,18 +67,31 @@ short_description: "Fixed bug.",
 	
 	html: function(isEvent, data) {
 		return `
-	<div><p>This action has been modified by DBM Mods.</p></div><br>
-	<div style="width: 85%;">
-		Event:<br>
-		<select id="source" class="round">
-		</select>
-	</div><br>
-	<div style="width: 85%;">
-		Call Type:<br>
-		<select id="type" class="round">
-			<option value="true" selected>Synchronous</option>
-			<option value="false">Asynchronous</option>
-		</select>
+	<div>
+		<div style="float: left; width: 40%;">
+			Source Field:<br>
+			<select id="info" class="round">
+				<option value="0" selected>Emoji ID</option>
+				<option value="1">Emoji Name</option>
+			</select>
+		</div>
+		<div style="float: right; width: 55%;">
+			Search Value:<br>
+			<input id="find" class="round" type="text">
+		</div>
+	</div><br><br><br>
+	<div style="padding-top: 8px;">
+		<div style="float: left; width: 35%;">
+			Store In:<br>
+			<select id="storage" class="round">
+				${data.variables[1]}
+			</select>
+		</div>
+		<div id="varNameContainer" style="float: right; width: 60%;">
+			Variable Name:<br>
+			<input id="varName" class="round" type="text">
+		</div>
+		MODIFIED BY QUINTEN
 	</div>`
 	},
 	
@@ -99,16 +104,6 @@ short_description: "Fixed bug.",
 	//---------------------------------------------------------------------
 	
 	init: function() {
-		const {glob, document} = this;
-	
-		const $evts = glob.$evts;
-		const source = document.getElementById('source');
-		source.innerHTML = '';
-		for(let i = 0; i < $evts.length; i++) {
-			if($evts[i]) {
-				source.innerHTML += `<option value="${i}">${$evts[i].name}</option>\n`;
-			}
-		}
 	},
 	
 	//---------------------------------------------------------------------
@@ -121,48 +116,27 @@ short_description: "Fixed bug.",
 	
 	action: function(cache) {
 		const data = cache.actions[cache.index];
-		const Files = this.getDBM().Files;
-		const bot = this.getDBM().Bot.bot;
-		
-		const id = data.source;
-		let actions;
-		const allData = Files.data.events;
-		for(let i = 0; i < allData.length; i++) {
-			if(allData[i] && allData[i]._id === id) {
-				actions = allData[i].actions;
+		const msg = cache.msg
+		const guild = cache.guild
+		const info = parseInt(data.info);
+		const find = this.evalMessage(data.find, cache);
+		let result;
+		switch(info) {
+			case 0:
+				result = msg.guild.emojis.find(e => e.id === find);
 				break;
-			}
+			case 1:
+				result = msg.guild.emojis.find(e => e.name === find);
+				break;
+			default:
+				break;
 		}
-		if(!actions) {
-			this.callNextAction(cache);
-			return;
+		if(result !== undefined) {
+			const storage = parseInt(data.storage);
+			const varName = this.evalMessage(data.varName, cache);
+			this.storeValue(result, storage, varName, cache);
 		}
-	
-		const servers = bot.guilds.array();
-		const act = actions[0];
-		if(act && this.exists(act.name)) {
-			const looper = function(i) {
-				if(!servers[i]) {
-					if(data.type === 'true') this.callNextAction(cache);
-					return;
-				}
-				const cache2 = {
-					actions: actions,
-					index: 0,
-					temp: cache.temp,
-					server: servers[i],
-					msg: (cache.msg || null)
-				}
-				cache2.callback = function() {
-					looper(i + 1);
-				}.bind(this);
-				this[act.name](cache2);
-			}.bind(this);
-			looper(0);
-			if(data.type === 'false') this.callNextAction(cache);
-		} else {
-			this.callNextAction(cache);
-		}
+		this.callNextAction(cache);
 	},
 	
 	//---------------------------------------------------------------------

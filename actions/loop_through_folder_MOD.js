@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Edit Embed",
+name: "Loop through Folder",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Edit Embed",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Embed Message",
+section: "Lists and Loops",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +23,43 @@ section: "Embed Message",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `${data.varName} - ${data.varName2}`;
+    return `Loops through folder, and turns filenames into array`;
 },
 
+    //---------------------------------------------------------------------
+    // DBM Mods Manager Variables (Optional but nice to have!)
+    //
+    // These are variables that DBM Mods Manager uses to show information
+    // about the mods for people to see in the list.
+    //---------------------------------------------------------------------
+
+    // Who made the mod (If not set, defaults to "DBM Mods")
+    author: "Jakob",
+
+    // The version of the mod (Defaults to 1.0.0)
+    version: "1.0", //Added in 1.8.9
+
+    // A short description to show on the mod line for this mod (Must be on a single line)
+    short_description: "Loops through a folder and puts the items in an array",
+
+    // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+
+
+    //---------------------------------------------------------------------
+
 //---------------------------------------------------------------------
-	 // DBM Mods Manager Variables (Optional but nice to have!)
-	 //
-	 // These are variables that DBM Mods Manager uses to show information
-	 // about the mods for people to see in the list.
-	 //---------------------------------------------------------------------
+// Action Storage Function
+//
+// Stores the relevant variable info for the editor.
+//---------------------------------------------------------------------
 
-	 // Who made the mod (If not set, defaults to "DBM Mods")
-	 author: "MrGold",
-
-	 // The version of the mod (Defaults to 1.0.0)
-	 version: "1.9", //Added in 1.9
-
-	 // A short description to show on the mod line for this mod (Must be on a single line)
-	 short_description: "Edits a Specific Embed",
-
-	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-
-	 //---------------------------------------------------------------------
+variableStorage: function(data, varType) {
+    const type = parseInt(data.storage);
+    if (type !== varType) return;
+    const filename = parseInt(data.filename);
+    let dataType = 'Array';
+    return ([data.varName2, dataType]);
+},
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -55,7 +69,7 @@ subtitle: function(data) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["storage", "varName", "storage2", "varName2"],
+fields: ["filename", "storage", "varName2"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -74,42 +88,35 @@ fields: ["storage", "varName", "storage2", "varName2"],
 //---------------------------------------------------------------------
 
 html: function(isEvent, data) {
-	return `
-	<div>
-		<p>
-			<u>Mod Info:</u><br>
-			Created by MrGold
-		</p>
-	</div><br>
+    return `
 <div>
-	<div style="float: left; width: 35%;">
-		Source Message Object:<br>
-		<select id="storage" class="round" onchange="glob.refreshVariableList(this, 'varNameContainer')">
-			${data.variables[1]}
-		</select>
-	</div>
-	<div id="varNameContainer" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName" class="round" type="text" list="variableList"><br>
-	</div>
-</div><br><br><br><br>
-	<div style="float: left; width: 35%;">
-		Source New Embed Object:<br>
-		<select id="storage2" class="round" onchange="glob.refreshVariableList(this, 'varNameContainer2')">
-			${data.variables[1]}
-		</select>
-	</div>
-	<div id="varNameContainer2" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName2" class="round" type="text" list="variableList"><br>
-</div>
-<div style="float: left; width: 88%; padding-top: 8px;">
-	<p>
-		<b>NOTE:</b> In the "Source Message Object" you can insert a normal message or an embed message (use "Send Embed Message MOD").
-	</p>
+    <p>
+        <u>Mod Info:</u><br>
+        Created by Jakob, original code by EliteArtz<br><br>
+
+        <u>Notice:</u><br>
+        -The folder needs to be in the bot folder!<br>
+        -This is a good path: ./resources/images<br>
+        -This will turn all filenames in the folder into an array.<br>
+    </p>
+    <div style="float: left; width: 60%">
+        Folder Path:
+        <input id="filename" class="round" type="text">
+    </div><br>
+</div><br><br><br>
 <div>
+    <div style="float: left; width: 35%;">
+        Store In:<br>
+        <select id="storage" class="round">
+            ${data.variables[1]}
+        </select>
+    </div>
+    <div id="varNameContainer2" style="float: right; width: 60%;">
+        Variable Name:<br>
+        <input id="varName2" class="round" type="text"><br>
+    </div>
 </div>`
-},
+    },
 
 //---------------------------------------------------------------------
 // Action Editor Init Code
@@ -119,12 +126,7 @@ html: function(isEvent, data) {
 // functions for the DOM elements.
 //---------------------------------------------------------------------
 
-init: function() {
-	const {glob, document} = this;
-
-	glob.refreshVariableList(document.getElementById('storage'), 'varNameContainer');
-	glob.refreshVariableList(document.getElementById('storage2'), 'varNameContainer2');
-},
+init: function() {},
 
 //---------------------------------------------------------------------
 // Action Bot Function
@@ -134,18 +136,23 @@ init: function() {
 // so be sure to provide checks for variable existance.
 //---------------------------------------------------------------------
 
-action: function(cache) {
-	const data = cache.actions[cache.index];
-	const storage = parseInt(data.storage);
-	const varName = this.evalMessage(data.varName, cache);
-	const embed = this.getVariable(storage, varName, cache);
-	const storage2 = parseInt(data.storage2);
-	const varName2 = this.evalMessage(data.varName2, cache);
-	const embed2 = this.getVariable(storage2, varName2, cache);
-	if(embed && embed.edit) {
-		embed.edit({embed: embed2})
-	}
-	this.callNextAction(cache);
+action: function (cache) {
+    const
+        data = cache.actions[cache.index],
+        fs = require('fs');
+        FOLDERPATH = this.evalMessage(data.filename, cache)
+    var output = {};
+    try {
+        if (FOLDERPATH) {
+            output = fs.readdirSync(FOLDERPATH);
+            this.storeValue(output, parseInt(data.storage), this.evalMessage(data.varName2, cache), cache);
+        } else {
+            console.log(`Path is missing.`);
+         }
+    } catch (err) {
+        console.error("ERROR!" + err.stack ? err.stack : err);
+    }
+    this.callNextAction(cache);
 },
 
 //---------------------------------------------------------------------
@@ -157,7 +164,6 @@ action: function(cache) {
 // functions you wish to overwrite.
 //---------------------------------------------------------------------
 
-mod: function(DBM) {
-}
+mod: function(DBM) {}
 
 }; // End of module

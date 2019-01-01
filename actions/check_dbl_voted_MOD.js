@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Edit Embed",
+name: "Check DBL Voted",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,23 @@ name: "Edit Embed",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Embed Message",
+section: "Conditions",
+
+//---------------------------------------------------------------------
+// DBM Mods Manager Variables
+//
+// These are variables that DBM Mods Manager uses to show information
+// about the mods for people to see in the list.
+//---------------------------------------------------------------------
+
+// Who made the mod (If not set, defaults to "DBM Mods")
+author: "Lasse",
+
+// The version of the mod (Defaults to 1.0.0)
+version: "1.8.9",
+
+// A short description to show on the mod line for this mod (Must be on a single line)
+short_description: "Check Voted Status of User on DBL",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +39,9 @@ section: "Embed Message",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `${data.varName} - ${data.varName2}`;
+	const results = ["Continue Actions", "Stop Action Sequence", "Jump To Action", "Jump Forward Actions"];
+	return `If True: ${results[parseInt(data.iftrue)]} ~ If False: ${results[parseInt(data.iffalse)]}`;
 },
-
-//---------------------------------------------------------------------
-	 // DBM Mods Manager Variables (Optional but nice to have!)
-	 //
-	 // These are variables that DBM Mods Manager uses to show information
-	 // about the mods for people to see in the list.
-	 //---------------------------------------------------------------------
-
-	 // Who made the mod (If not set, defaults to "DBM Mods")
-	 author: "MrGold",
-
-	 // The version of the mod (Defaults to 1.0.0)
-	 version: "1.9", //Added in 1.9
-
-	 // A short description to show on the mod line for this mod (Must be on a single line)
-	 short_description: "Edits a Specific Embed",
-
-	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-
-	 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -55,7 +51,7 @@ subtitle: function(data) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["storage", "varName", "storage2", "varName2"],
+fields: ["member", "apitoken", "varName", "iftrue", "iftrueVal", "iffalse", "iffalseVal"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -75,39 +71,27 @@ fields: ["storage", "varName", "storage2", "varName2"],
 
 html: function(isEvent, data) {
 	return `
+	<div><p><u>Mod Info:</u><br>Created by Lasse!<br>Idea by CmdData</p></div><br>
 	<div>
-		<p>
-			<u>Mod Info:</u><br>
-			Created by MrGold
-		</p>
-	</div><br>
+		<div style="float: left; width: 35%;">
+			Source Member:<br>
+			<select id="member" class="round" onchange="glob.memberChange(this, 'varNameContainer')">
+				${data.members[isEvent ? 1 : 0]}
+			</select>
+		</div>
+		<div id="varNameContainer" style="display: none; float: right; width: 60%;">
+			Variable Name:<br>
+			<input id="varName" class="round" type="text" list="variableList"><br>
+		</div>
+	</div><br><br><br>
 <div>
-	<div style="float: left; width: 35%;">
-		Source Message Object:<br>
-		<select id="storage" class="round" onchange="glob.refreshVariableList(this, 'varNameContainer')">
-			${data.variables[1]}
-		</select>
+	<div style="float: left; width: 89%;">
+		DBL API Token:<br>
+		<input id="apitoken" class="round" type="text">
 	</div>
-	<div id="varNameContainer" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName" class="round" type="text" list="variableList"><br>
-	</div>
-</div><br><br><br><br>
-	<div style="float: left; width: 35%;">
-		Source New Embed Object:<br>
-		<select id="storage2" class="round" onchange="glob.refreshVariableList(this, 'varNameContainer2')">
-			${data.variables[1]}
-		</select>
-	</div>
-	<div id="varNameContainer2" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName2" class="round" type="text" list="variableList"><br>
-</div>
-<div style="float: left; width: 88%; padding-top: 8px;">
-	<p>
-		<b>NOTE:</b> In the "Source Message Object" you can insert a normal message or an embed message (use "Send Embed Message MOD").
-	</p>
-<div>
+</div><br><br><br>
+<div style="padding-top: 8px;">
+	${data.conditions[0]}
 </div>`
 },
 
@@ -122,8 +106,9 @@ html: function(isEvent, data) {
 init: function() {
 	const {glob, document} = this;
 
-	glob.refreshVariableList(document.getElementById('storage'), 'varNameContainer');
-	glob.refreshVariableList(document.getElementById('storage2'), 'varNameContainer2');
+	glob.memberChange(document.getElementById('member'), 'varNameContainer');
+	glob.onChangeTrue(document.getElementById('iftrue'));
+	glob.onChangeFalse(document.getElementById('iffalse'));
 },
 
 //---------------------------------------------------------------------
@@ -136,16 +121,23 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-	const storage = parseInt(data.storage);
+	const userid = this.evalMessage(data.userid, cache);
+	const apitoken = this.evalMessage(data.apitoken, cache);
+	const type = parseInt(data.member);
 	const varName = this.evalMessage(data.varName, cache);
-	const embed = this.getVariable(storage, varName, cache);
-	const storage2 = parseInt(data.storage2);
-	const varName2 = this.evalMessage(data.varName2, cache);
-	const embed2 = this.getVariable(storage2, varName2, cache);
-	if(embed && embed.edit) {
-		embed.edit({embed: embed2})
+	const member = this.getMember(type, varName, cache);
+
+	const WrexMODS = this.getWrexMods();
+	const DBL = WrexMODS.require('dblapi.js');
+	const dbl = new DBL(apitoken);
+
+	if(!apitoken) {
+		console.log('ERROR! Please provide an API token for DBL!');
 	}
-	this.callNextAction(cache);
+
+	dbl.hasVoted(member.user.id).then(voted => {
+		this.executeResults(voted, data, cache);
+	});
 },
 
 //---------------------------------------------------------------------

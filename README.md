@@ -17,9 +17,7 @@ If you have a GitHub account, this is made ***really*** easy. Just login with Gi
 
 ### 3. Import this repo
 Follow the images.
-![alt text](https://upldr.party/pjQFOcoL.png)
-![alt text](https://upldr.party/9YaOTmxV.png)
-![alt text](https://upldr.party/OfVj3eGO.png)
+![alt text](https://upldr.party/pjQFOcoL.png)![alt text](https://upldr.party/9YaOTmxV.png)![alt text](https://upldr.party/OfVj3eGO.png)
 Paste `noahmarshall12/superman` in the box, then press Okay.
 
 ### 4. Paste in your "data" files.

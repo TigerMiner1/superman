@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "License",
+name: "Convert Seconds To D/H/M/S",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,8 @@ name: "License",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "#Mod Information",
+section: "Other Stuff",
+
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +24,29 @@ section: "#Mod Information",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `Does nothing - Click "Edit" for more information`;
+return `Convert ${data.time}`;
 },
 
 //---------------------------------------------------------------------
-// DBM Mods Manager Variables (Optional but nice to have!)
-//
-// These are variables that DBM Mods Manager uses to show information
-// about the mods for people to see in the list.
-//---------------------------------------------------------------------
+	 // DBM Mods Manager Variables (Optional but nice to have!)
+	 //
+	 // These are variables that DBM Mods Manager uses to show information
+	 // about the mods for people to see in the list.
+	 //---------------------------------------------------------------------
 
-// Who made the mod (If not set, defaults to "DBM Mods")
-author: "DBM Network",
+ // Who made the mod (If not set, defaults to "DBM Mods")
+ author: "Aamon", //Idea by Tresmos    // I don't know who Tremos is but 'heya' =]]]
 
-// The version of the mod (Defaults to 1.0.0)
-version: "1.9.4", //Added in 1.8.5
+ // The version of the mod (Defaults to 1.0.0)
+ version: "1.9.4", //not added yet....
 
-// A short description to show on the mod line for this mod (Must be on a single line)
-short_description: "MIT License",
+ // A short description to show on the mod line for this mod (Must be on a single line)
+ short_description: "Convert Seconds to Days, Hours, Minutes and Seconds.",
 
-// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+ // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
 
 
-//---------------------------------------------------------------------
+ //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Storage Function
@@ -53,7 +54,12 @@ short_description: "MIT License",
 // Stores the relevant variable info for the editor.
 //---------------------------------------------------------------------
 
-//variableStorage: function(data, varType) {},
+variableStorage: function(data, varType) {
+		const type = parseInt(data.storage);
+		if(type !== varType) return;
+		return ([data.varName, 'Date']);
+	},
+
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -63,7 +69,7 @@ short_description: "MIT License",
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: [],
+fields: ["time", "storage", "varName"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -83,19 +89,31 @@ fields: [],
 
 html: function(isEvent, data) {
 	return `
-<div>
-<div id ="wrexdiv" style="width: 550px; height: 350px; overflow-y: scroll;">
-DBM Mods has no official affiliation with Discord or Discord Bot Maker.<br>
-<h2>MIT License</h2><br>
-
-Copyright (c) 2017-2018 DBM Network<br><br>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br><br>
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br><br>
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-</div>`
+	<div style="float: left; width: 95%; padding-top: 8px;">
+		<p><u>Mod Info:</u><br>
+		Made by <b>Aamon</b>! <br> Convert seconds to Days Hours Minutes and Seconds.</p>
+	</div>
+	<br><br><br>
+	<div style="float: left; width: 70%; padding-top: 8px;">
+		Seconds to Convert:
+		<input id="time" class="round" type="text" placeholder="e.g. 1522672056 or use Variables">
+	</div>
+	<div style="float: left; width: 35%; padding-top: 8px;">
+		Store Result In:<br>
+		<select id="storage" class="round" onchange="glob.variableChange(this, 'varNameContainer')">
+		${data.variables[0]}
+		</select>
+	</div>
+	<div id="varNameContainer" style="float: right; display: none; width: 60%; padding-top: 8px;">
+		Variable Name:<br>
+		<input id="varName" class="round" type="text">
+	</div><br><br>
+	<div style=" float: left; width: 88%; padding-top: 8px;">
+		<br>
+		<p>
+			For aditional information contact <b>Aamon#9130</b> on Discord or <a href ="https://twitter.com/44m0n"><b>@44m0n<b></a> on Twitter. 
+		</p>
+	</div>`;
 },
 
 //---------------------------------------------------------------------
@@ -106,7 +124,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 // functions for the DOM elements.
 //---------------------------------------------------------------------
 
-init: function() {},
+init: function() {
+	const {glob, document} = this;
+
+	glob.variableChange(document.getElementById('storage'), 'varNameContainer');
+},
 
 //---------------------------------------------------------------------
 // Action Bot Function
@@ -116,7 +138,54 @@ init: function() {},
 // so be sure to provide checks for variable existance.
 //---------------------------------------------------------------------
 
-action: function(cache) {},
+action: function(cache) {
+
+	const data = cache.actions[cache.index];
+	const time = this.evalMessage(data.time, cache);
+	var   _this = this; // this is needed sometimes.
+
+    // Main code.
+
+
+
+	
+	let d, h, m, s;
+	let result;
+
+	if (isNaN(time)) {
+		result.toString() = "Invalid Date";
+		console.log('Please insert a number');
+	}
+	else {
+
+		s = time;
+
+
+		m = Math.floor(s / 60);
+		s = s % 60;
+		h = Math.floor(m / 60);
+		m = m % 60;
+		d = Math.floor(h / 24);
+		h = h % 24;
+
+		result = d + "d " + h + "h " + m + "m " + s + "s";
+
+	}
+		//return { days: d, hours: h, minutes: m, seconds: s }
+	
+
+
+	
+	if (result.toString() === "Invalid Date") result = undefined;
+
+    // Storage.
+	if(result !== undefined) {
+		const storage = parseInt(data.storage);
+		const varName = this.evalMessage(data.varName, cache);
+		this.storeValue(result, storage, varName, cache);
+	}
+    this.callNextAction(cache);
+},
 
 //---------------------------------------------------------------------
 // Action Bot Mod

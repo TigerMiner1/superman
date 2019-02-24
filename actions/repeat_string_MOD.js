@@ -6,7 +6,25 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Edit Message",
+name: "Repeat String",
+
+//---------------------------------------------------------------------
+// DBM Mods Manager Variables (Optional but nice to have!)
+//
+// These are variables that DBM Mods Manager uses to show information
+// about the mods for people to see in the list.
+//---------------------------------------------------------------------
+
+    // Who made the mod (If not set, defaults to "DBM Mods")
+    author: "Armağan",
+
+    // The version of the mod (Defaults to 1.0.0)
+    version: "1.0.0", //Added in 1.8.7
+
+    // A short description to show on the mod line for this mod (Must be on a single line)
+    short_description: "Allows you to repeat text you want as much want.",
+
+    // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +32,7 @@ name: "Edit Message",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Messaging",
+section: "Other Stuff",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,8 +41,19 @@ section: "Messaging",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const names = ['Command Message', 'Temp Variable', 'Server Variable', 'Global Variable'];
-	return data.storage === "0" ? `${names[parseInt(data.storage)]}` : `${names[parseInt(data.storage)]} (${data.varName})`;
+	return `${data.xtimes || "0"}x "${data.girdi || "None"}"`;
+},
+
+//---------------------------------------------------------------------
+// Action Storage Function
+//
+// Stores the relevant variable info for the editor.
+//---------------------------------------------------------------------
+
+variableStorage: function(data, varType) {
+	const type = parseInt(data.storage);
+	if(type !== varType) return;
+	return ([data.varName, 'Text']);
 },
 
 //---------------------------------------------------------------------
@@ -35,55 +64,62 @@ subtitle: function(data) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["storage", "varName", "message", "storage2", "varName2"],
+fields: ["storage", "varName", "girdi", "xtimes"],
 
 //---------------------------------------------------------------------
 // Command HTML
 //
 // This function returns a string containing the HTML used for
-// editting actions. 
+// editting actions.
 //
 // The "isEvent" parameter will be true if this action is being used
-// for an event. Due to their nature, events lack certain information, 
+// for an event. Due to their nature, events lack certain information,
 // so edit the HTML to reflect this.
 //
-// The "data" parameter stores constants for select elements to use. 
+// The "data" parameter stores constants for select elements to use.
 // Each is an array: index 0 for commands, index 1 for events.
-// The names are: sendTargets, members, roles, channels, 
+// The names are: sendTargets, members, roles, channels,
 //                messages, servers, variables
 //---------------------------------------------------------------------
 
 html: function(isEvent, data) {
 	return `
-<div><p>This action has been modified by DBM Mods</p></div><br>
 <div>
-	<div style="float: left; width: 35%;">
-		Source Message:<br>
-		<select id="storage" class="round" onchange="glob.messageChange(this, 'varNameContainer')">
-			${data.messages[isEvent ? 1 : 0]}
-		</select>
+  <div>
+  <u>Mod Info:</u><br>Created by Armağan!
+  </div>
+
+<br>
+ <div>
+	<div>
+		String:<br>
+		<input placeholder="String or varible" id="girdi" class="round" type="text">
 	</div>
-	<div id="varNameContainer" style="display: none; float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName" class="round" type="text" list="variableList"><br>
+
+	<br>
+
+	<div>
+		Times:<br>
+		<input placeholder="Number or varible" id="xtimes" class="round" type="text">
 	</div>
-</div><br><br><br>
-<div style="padding-top: 8px;">
-	Edited Message Content:<br>
-	<textarea id="message" rows="7" placeholder="Insert message here... (Optional)" style="width: 94%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
-</div><br>
-<div>
-	<div style="float: left; width: 35%;">
-		Source Embed Object:<br>
-		<select id="storage2" class="round" onchange="glob.refreshVariableList(this, 'varNameContainer2')">
-			${data.variables[1]}
-		</select>
-	</div>
-	<div id="varNameContainer2" style="float: right; width: 60%;">
-		Variable Name:<br>
-		<input id="varName2" placeholder="Optional" class="round" type="text" list="variableList"><br>
-	</div>
-</div>`
+ </div>
+
+	<br>
+
+    <div>
+		<div style="float: left; width: 35%;">
+			Store In:<br>
+			<select id="storage" class="round">
+				${data.variables[1]}
+			</select>
+		</div>
+		<div id="varNameContainer" style="float: right; width: 60%;">
+			Variable Name:<br>
+			<input id="varName" class="round" type="text">
+		</div>
+	 </div>
+
+	</div>`
 },
 
 //---------------------------------------------------------------------
@@ -95,44 +131,35 @@ html: function(isEvent, data) {
 //---------------------------------------------------------------------
 
 init: function() {
-	const {glob, document} = this;
-
-	glob.messageChange(document.getElementById('storage'), 'varNameContainer');
-	glob.refreshVariableList(document.getElementById('storage2'), 'varNameContainer2');
 },
 
 //---------------------------------------------------------------------
 // Action Bot Function
 //
 // This is the function for the action within the Bot's Action class.
-// Keep in mind event calls won't have access to the "msg" parameter, 
+// Keep in mind event calls won't have access to the "msg" parameter,
 // so be sure to provide checks for variable existance.
 //---------------------------------------------------------------------
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-
-	const storage = parseInt(data.storage);
+	const type = parseInt(data.storage);
 	const varName = this.evalMessage(data.varName, cache);
-	const message = this.getMessage(storage, varName, cache);
+	const girdi = this.evalMessage(data.girdi, cache);
+	const xtimes = this.evalMessage(data.xtimes, cache);
+	const storage = this.getVariable(type, varName, cache);
 
-	const content = this.evalMessage(data.message, cache);
 
-	const storage2 = parseInt(data.storage2);
-	const varName2 = this.evalMessage(data.varName2, cache);
-	const embed = this.getVariable(storage2, varName2, cache);
+	var _this = this;
+	const WrexMODS = _this.getWrexMods();
+	WrexMODS.CheckAndInstallNodeModule('repeat-string');
+	const search = WrexMODS.require('repeat-string');
 
-	if(Array.isArray(message)) {
-		this.callListFunc(message, 'edit', [content, embed]).then(function() {
-			this.callNextAction(cache);
-		}.bind(this));
-	} else if(message && message.delete) {
-		message.edit(content, embed).then(function() {
-			this.callNextAction(cache);
-		}.bind(this)).catch(this.displayError.bind(this, data, cache));
-	} else {
-		this.callNextAction(cache);
-	}
+
+	var repeat = require('repeat-string');
+	var val = repeat(girdi, xtimes);
+	this.storeValue(val, type, varName, cache);
+	this.callNextAction(cache);
 },
 
 //---------------------------------------------------------------------

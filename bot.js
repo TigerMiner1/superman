@@ -25,7 +25,7 @@ const app = express();
 app.use(keepalive);
 
 app.get('/', (req, res) => {
-res.json('This bot should be online! Uptimerobot will keep it alive');
+res.json('🚀 This bot is using SUPERMAN! 🚀\n\nThis bot should be online. Please consult the bot logs if you are experiencing issues.');
 });
 app.get("/", (request, response) => {
 response.sendStatus(200);

@@ -14,3 +14,6 @@ This guide is not in-depth and should not be followed, but only used for refrenc
 ## Contact:
 If you need help, please DM me on Discord: **Noah#3400**.
 I do not promise the upkeep of these actions and suggest you check them before use, and add any required actions upon import.
+
+## Disclaimer:
+I haven't developed anything with DBM for quite a while and can't promise help with things related to creating a bot.

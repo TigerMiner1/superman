@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Create Voice Channel",
+name: "Find Item in List",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,28 @@ name: "Create Voice Channel",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Channel Control",
+section: "Lists and Loops",
+
+//---------------------------------------------------------------------
+// DBM Mods Manager Variables (Optional but nice to have!)
+//
+// These are variables that DBM Mods Manager uses to show information
+// about the mods for people to see in the list.
+//---------------------------------------------------------------------
+
+// Who made the mod (If not set, defaults to "DBM Mods")
+author: "ZockerNico",
+
+// The version of the mod (Defaults to 1.0.0)
+version: "1.9.5", //Added in 1.9.5
+
+// A short description to show on the mod line for this mod (Must be on a single line)
+short_description: "This action searches for an item in a list and returns the position.",
+
+// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+
+
+//---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,7 +44,8 @@ section: "Channel Control",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `${data.channelName}`;
+	const list = ['Server Members', 'Server Channels', 'Server Roles', 'Server Emojis', 'All Bot Servers', 'Mentioned User Roles', 'Command Author Roles', 'Temp Variable', 'Server Variable', 'Global Variable'];
+	return `Find "${data.item}" in ${list[parseInt(data.list)]}`;
 },
 
 //---------------------------------------------------------------------
@@ -35,7 +57,7 @@ subtitle: function(data) {
 variableStorage: function(data, varType) {
 	const type = parseInt(data.storage);
 	if(type !== varType) return;
-	return ([data.varName, 'Voice Channel']);
+	return ([data.varName2, 'Number']);
 },
 
 //---------------------------------------------------------------------
@@ -46,7 +68,7 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["channelName", "categoryID", "bitrate", "userLimit", "storage", "varName"],
+fields: ["list", "varName", "item", "storage", "varName2"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -66,34 +88,36 @@ fields: ["channelName", "categoryID", "bitrate", "userLimit", "storage", "varNam
 
 html: function(isEvent, data) {
 	return `
-Name:<br>
-<input id="channelName" class="round" type="text" style="width: 95%"><br>
-
-Category ID:<br>
-<input id= "categoryID" class="round" type="text" placeholder="Keep this empty if you don't want to put it into a category" style="width: 95%"><br>
-
-<div style="float: left; width: 50%;">
-	Bitrate:<br>
-	<input id="bitrate" class="round" type="text" placeholder="Leave blank for default!" style="width: 90%;"><br>
-</div>
-
-<div style="float: right; width: 50%;">
-	User Limit:<br>
-	<input id="userLimit" class="round" type="text" placeholder="Leave blank for default!" style="width: 90%;"><br>
-</div>
-
-<div>
-	<div style="float: left; width: 45%;">
-		Store In:<br>
-		<select id="storage" class="round" onchange="glob.variableChange(this, 'varNameContainer')">
-			${data.variables[0]}
+	<div><p>Made by ZockerNico.</p></div><br>
+<div><b></b>
+	<div style="float: left; width: 35%;">
+		Source List:<br>
+		<select id="list" class="round" onchange="glob.listChange(this, 'varNameContainer')">
+			${data.lists[isEvent ? 1 : 0]}
 		</select>
 	</div>
-	<div id="varNameContainer" style="display: none; float: right; width: 50%;">
+	<div id="varNameContainer" style="display: none; float: right; width: 60%;">
 		Variable Name:<br>
-		<input id="varName" class="round" type="text" style="width: 90%"><br>
+		<input id="varName" class="round" type="text" list="variableList"><br>
 	</div>
-</div>`
+</div><br><br><br>
+<div style="padding-top: 8px;">
+	Item to find:<br>
+	<textarea id="item" rows="4" placeholder="Insert a variable or some text. Those '' are not needed!" style="width: 94%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
+</div><br>
+<div style="padding-top: 8px;">
+	<div style="float: left; width: 35%;">
+		Store In:<br>
+		<select id="storage" class="round">
+			${data.variables[1]}
+		</select>
+	</div>
+	<div id="varNameContainer2" style="float: right; width: 60%;">
+		Variable Name:<br>
+		<input id="varName2" class="round" type="text">
+	</div>
+</div><br><br><br>
+<div><p>This action searches for an item in a list and returns the position.<br>Note that every list in JavaScript starts from 0!</p></div><br>`
 },
 
 //---------------------------------------------------------------------
@@ -107,7 +131,17 @@ Category ID:<br>
 init: function() {
 	const {glob, document} = this;
 
-	glob.variableChange(document.getElementById('storage'), 'varNameContainer');
+	glob.onChange1 = function(event) {
+		const value = parseInt(event.value);
+		const dom = document.getElementById('positionHolder');
+		if(value < 3) {
+			dom.style.display = 'none';
+		} else {
+			dom.style.display = null;
+		}
+	};
+
+	glob.listChange(document.getElementById('list'), 'varNameContainer');
 },
 
 //---------------------------------------------------------------------
@@ -119,31 +153,32 @@ init: function() {
 //---------------------------------------------------------------------
 
 action: function(cache) {
-	const data = cache.actions[cache.index];
-	const server = cache.server;
-	const catid = this.evalMessage(data.categoryID, cache);
-	const bitrate = parseInt(this.evalMessage(data.bitrate, cache));
-	const userLimit = parseInt(this.evalMessage(data.userLimit, cache));
-	if(server && server.createChannel) {
-		const name = this.evalMessage(data.channelName, cache);
-		const storage = parseInt(data.storage);
-		if (!catid) {
-			server.createChannel(name, {type: 'voice', bitrate: bitrate, userLimit: userLimit}).then(function(channel) {
-				const varName = this.evalMessage(data.varName, cache);
-				this.storeValue(channel, storage, varName, cache);
-				this.callNextAction(cache);
-			}.bind(this)).catch(this.displayError.bind(this, data, cache));
-		} else {
-			server.createChannel(name, {type: 'voice', bitrate: bitrate, userLimit: userLimit, parent: catid}).then(function(channel) {
-				const varName = this.evalMessage(data.varName, cache);
-				this.storeValue(channel, storage, varName, cache);
-				this.callNextAction(cache);
-			}.bind(this)).catch(this.displayError.bind(this, data, cache));
-		}
-	} else {
-		this.callNextAction(cache);
-	}
-},
+    const data = cache.actions[cache.index];
+    const storage = parseInt(data.list);
+    const varName = this.evalMessage(data.varName, cache);
+		const list = this.getList(storage, varName, cache);
+		const item = this.evalMessage(data.item, cache);
+
+		let result;
+		var loop = 0;
+
+    while(loop < list.length) {
+			if(list[loop] == item) {
+				result = loop;
+				break;
+			} else {
+				++loop;
+			}
+		};
+
+    if (result !== undefined) {
+      const varName2 = this.evalMessage(data.varName2, cache);
+      const storage2 = parseInt(data.storage);
+      this.storeValue(result, storage2, varName2, cache);
+    };
+
+    this.callNextAction(cache);
+  },
 
 //---------------------------------------------------------------------
 // Action Bot Mod

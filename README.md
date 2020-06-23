@@ -4,6 +4,8 @@
 
 > ⚠️ **NOTE:**<br/>Please make sure that all mods or custom actions you use are also here. If you encounter an issue with a certian action, please replace it in a pull request.
 
+> ⚠️ **DISCLAIMER:**<br/>If your bot is in over 50 servers or is more resource intensive Glitch might be unstable for you. Using a VPS is advised when your bot starts to grow and Glitch should never be a permanent solution.
+
 ## ℹ️ Information:
 This guide is not in-depth and should not be followed, but only used for refrence.
 
